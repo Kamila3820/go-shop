@@ -21,7 +21,7 @@ type Response struct {
 
 type ErrorResponse struct {
 	TraceId string `json:"trace_id"`
-	Msg     string `json:"messagw"`
+	Msg     string `json:"message"`
 }
 
 func NewResponse(c *fiber.Ctx) IResponse {

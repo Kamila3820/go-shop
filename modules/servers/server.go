@@ -48,6 +48,7 @@ func (s *server) Start() {
 	modules := InitModule(v1, s, middlewares) //ไม่ต้อง import เพราะอยู่ package เดียวกัน
 
 	modules.MonitorModule()
+	modules.UsersModule()
 
 	s.app.Use(middlewares.RouterCheck())
 
