@@ -103,7 +103,7 @@ func (f *userReq) Result() (*users.UserPassport, error) {
 	query := `
 	SELECT 
 		json_build_object(
-			'user', "t"
+			'user', "t",
 			'token', NULL
 		)
 	FROM(
