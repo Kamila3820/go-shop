@@ -6,6 +6,7 @@ import (
 	"github.com/Kamila3820/go-shop-tutorial/config"
 	"github.com/Kamila3820/go-shop-tutorial/modules/users"
 	"github.com/Kamila3820/go-shop-tutorial/modules/users/usersRepositories"
+	"github.com/Kamila3820/go-shop-tutorial/pkg/goauth"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -53,6 +54,16 @@ func (u *usersUsecase) GetPassport(req *users.UserCredential) (*users.UserPasspo
 		return nil, fmt.Errorf("password is invalid")
 	}
 
+	// Sign Token
+	accessToken, err := goauth.NewGoAuth(goauth.Access, u.cfg.Jwt(), &users.UserClaims{
+		Id:     user.Id,
+		RoleId: user.RoleId,
+	})
+	refreshToken, err := goauth.NewGoAuth(goauth.Refresh, u.cfg.Jwt(), &users.UserClaims{
+		Id:     user.Id,
+		RoleId: user.RoleId,
+	})
+
 	// set passport
 	passport := &users.UserPassport{
 		User: &users.User{
@@ -61,7 +72,14 @@ func (u *usersUsecase) GetPassport(req *users.UserCredential) (*users.UserPasspo
 			Username: user.Username,
 			RoleId:   user.RoleId,
 		},
-		Token: nil,
+		Token: &users.UserToken{
+			AccessToken:  accessToken.SignToken(),
+			RefreshToken: refreshToken.SignToken(),
+		},
+	}
+
+	if err := u.usersRepository.InsertOauth(passport); err != nil {
+		return nil, err
 	}
 	return passport, nil
 }
