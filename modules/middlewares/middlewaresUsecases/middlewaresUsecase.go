@@ -3,6 +3,7 @@ package middlewaresUsecases
 import "github.com/Kamila3820/go-shop-tutorial/modules/middlewares/middlewaresRepositories"
 
 type IMiddlewaresUsecase interface {
+	FindAccessToken(userId string, accessToken string) bool
 }
 
 type middlewaresUsecase struct {
@@ -13,4 +14,8 @@ func MiddlewaresUsecase(middlewaresRepository middlewaresRepositories.IMiddlewar
 	return &middlewaresUsecase{
 		middlewaresRepository: middlewaresRepository,
 	}
+}
+
+func (u *middlewaresUsecase) FindAccessToken(userId string, accessToken string) bool {
+	return u.middlewaresRepository.FindAccessToken(userId, accessToken)
 }
