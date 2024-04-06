@@ -57,7 +57,7 @@ func (m *moduleFactory) UsersModule() {
 	router.Post("/signup-admin", handler.SignUpAdmin)
 
 	router.Get("/:user_id", m.mid.JwtAuth(), m.mid.ParamsCheck(), handler.GetUserProfile)
-	router.Get("/secret", m.mid.JwtAuth(), handler.GenerateAdminToken)
+	router.Get("/admin/secret", m.mid.JwtAuth(), m.mid.Authorize(2), handler.GenerateAdminToken)
 
 	// Initial admin ขึ้นมา 1 คน ใน Db (Insert ใน SQL)
 	// Generate Admin Key
