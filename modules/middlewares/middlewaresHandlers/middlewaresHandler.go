@@ -7,6 +7,7 @@ import (
 	"github.com/Kamila3820/go-shop-tutorial/modules/entities"
 	"github.com/Kamila3820/go-shop-tutorial/modules/middlewares/middlewaresUsecases"
 	"github.com/Kamila3820/go-shop-tutorial/pkg/goauth"
+	"github.com/Kamila3820/go-shop-tutorial/pkg/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -18,6 +19,7 @@ const (
 	routerCheckErr middlewaresHandlersErrCode = "middleware-001"
 	jwtAuthErr     middlewaresHandlersErrCode = "middleware-002"
 	paramsCheckErr middlewaresHandlersErrCode = "middleware-003"
+	authorizeErr   middlewaresHandlersErrCode = "middleware-004"
 )
 
 type IMiddlewaresHandler interface {
@@ -26,6 +28,7 @@ type IMiddlewaresHandler interface {
 	Logger() fiber.Handler
 	JwtAuth() fiber.Handler
 	ParamsCheck() fiber.Handler
+	Authorize(expectRoleId ...int) fiber.Handler
 }
 
 type middlewaresHandler struct {
@@ -111,5 +114,47 @@ func (h *middlewaresHandler) ParamsCheck() fiber.Handler {
 		}
 
 		return c.Next()
+	}
+}
+
+func (h *middlewaresHandler) Authorize(expectRoleId ...int) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userRoleId, ok := c.Locals("userRoleId").(int)
+		if !ok {
+			return entities.NewResponse(c).Error(
+				fiber.ErrUnauthorized.Code,
+				string(authorizeErr),
+				"userRoleId is not int type",
+			).Res()
+		}
+
+		roles, err := h.middlewaresUsecase.FindRole()
+		if err != nil {
+			return entities.NewResponse(c).Error(
+				fiber.ErrInternalServerError.Code,
+				string(authorizeErr),
+				err.Error(),
+			).Res()
+		}
+
+		sum := 0
+		for _, v := range expectRoleId {
+			sum += v
+		}
+
+		expectedValueBinary := utils.BinaryConverter(sum, len(roles))
+		userValueBinary := utils.BinaryConverter(userRoleId, len(roles))
+
+		for i := range userValueBinary {
+			if userValueBinary[i]&expectedValueBinary[i] == 1 {
+				return c.Next()
+			}
+		}
+		return entities.NewResponse(c).Error(
+			fiber.ErrUnauthorized.Code,
+			string(authorizeErr),
+			"no permission to access",
+		).Res()
+
 	}
 }
