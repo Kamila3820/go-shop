@@ -29,6 +29,10 @@ type goAdmin struct {
 	*goAuth
 }
 
+type goApiKey struct {
+	*goAuth
+}
+
 type goMapClaims struct {
 	Claims *users.UserClaims `json:"claims"`
 	jwt.RegisteredClaims
@@ -39,6 +43,10 @@ type IGoAuth interface {
 }
 
 type IGoAdmin interface {
+	SignToken() string
+}
+
+type IGoApiKey interface {
 	SignToken() string
 }
 
@@ -59,6 +67,12 @@ func (a *goAuth) SignToken() string {
 func (a *goAdmin) SignToken() string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, a.mapClaims)
 	ss, _ := token.SignedString(a.cfg.AdminKey())
+	return ss
+}
+
+func (a *goApiKey) SignToken() string {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, a.mapClaims)
+	ss, _ := token.SignedString(a.cfg.ApiKey())
 	return ss
 }
 
@@ -129,6 +143,30 @@ func ParseAdminToken(cfg config.IJwtConfig, tokenString string) (*goMapClaims, e
 	}
 }
 
+func ParseApiKey(cfg config.IJwtConfig, tokenString string) (*goMapClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &goMapClaims{}, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("signing method is invalid")
+		}
+		return cfg.ApiKey(), nil
+	})
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenMalformed) {
+			return nil, fmt.Errorf("token format is invalid")
+		} else if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, fmt.Errorf("token had expired")
+		} else {
+			return nil, fmt.Errorf("parse token failed: %v", err)
+		}
+	}
+
+	if claims, ok := token.Claims.(*goMapClaims); ok {
+		return claims, nil
+	} else {
+		return nil, fmt.Errorf("claims type is invalid")
+	}
+}
+
 func NewGoAuth(tokenType TokenType, cfg config.IJwtConfig, claims *users.UserClaims) (IGoAuth, error) {
 	switch tokenType {
 	case Access:
@@ -137,6 +175,8 @@ func NewGoAuth(tokenType TokenType, cfg config.IJwtConfig, claims *users.UserCla
 		return newRefreshToken(cfg, claims), nil
 	case Admin:
 		return newAdminToken(cfg), nil
+	case ApiKey:
+		return newApiKey(cfg), nil
 	default:
 		return nil, fmt.Errorf("unknown token type")
 	}
@@ -187,6 +227,25 @@ func newAdminToken(cfg config.IJwtConfig) IGoAuth {
 					Subject:   "admin-token",
 					Audience:  []string{"admin"},
 					ExpiresAt: jwtTimeDurationCal(300),
+					NotBefore: jwt.NewNumericDate(time.Now()),
+					IssuedAt:  jwt.NewNumericDate(time.Now()),
+				},
+			},
+		},
+	}
+}
+
+func newApiKey(cfg config.IJwtConfig) IGoAuth {
+	return &goApiKey{
+		goAuth: &goAuth{
+			cfg: cfg,
+			mapClaims: &goMapClaims{
+				Claims: nil,
+				RegisteredClaims: jwt.RegisteredClaims{
+					Issuer:    "goshop-api",
+					Subject:   "api-key",
+					Audience:  []string{"admin", "customer"},
+					ExpiresAt: jwt.NewNumericDate(time.Now().AddDate(2, 0, 0)),
 					NotBefore: jwt.NewNumericDate(time.Now()),
 					IssuedAt:  jwt.NewNumericDate(time.Now()),
 				},
