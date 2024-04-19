@@ -4,6 +4,8 @@ import (
 	"github.com/Kamila3820/go-shop-tutorial/modules/appinfo/appinfoHandlers"
 	"github.com/Kamila3820/go-shop-tutorial/modules/appinfo/appinfoRepositories"
 	"github.com/Kamila3820/go-shop-tutorial/modules/appinfo/appinfoUsecases"
+	"github.com/Kamila3820/go-shop-tutorial/modules/files/filesHandlers"
+	"github.com/Kamila3820/go-shop-tutorial/modules/files/filesUsecases"
 	"github.com/Kamila3820/go-shop-tutorial/modules/middlewares/middlewaresHandlers"
 	"github.com/Kamila3820/go-shop-tutorial/modules/middlewares/middlewaresRepositories"
 	"github.com/Kamila3820/go-shop-tutorial/modules/middlewares/middlewaresUsecases"
@@ -18,6 +20,7 @@ type IModuleFactory interface {
 	MonitorModule()
 	UsersModule()
 	AppinfoModule()
+	FilesModule()
 }
 
 type moduleFactory struct {
@@ -80,4 +83,14 @@ func (m *moduleFactory) AppinfoModule() {
 	router.Get("/categories", m.mid.ApiKeyAuth(), handler.FindCategory)
 	router.Post("/categories", m.mid.JwtAuth(), m.mid.Authorize(2), handler.AddCategory)
 	router.Delete("/:category_id/categories", m.mid.JwtAuth(), m.mid.Authorize(2), handler.RemoveCategory)
+}
+
+func (m *moduleFactory) FilesModule() {
+	usecase := filesUsecases.FilesUsecase(m.s.cfg)
+	handler := filesHandlers.FilesHandler(m.s.cfg, usecase)
+
+	router := m.r.Group("/files")
+
+	router.Post("/upload", m.mid.JwtAuth(), m.mid.Authorize(2), handler.UploadFiles)
+
 }

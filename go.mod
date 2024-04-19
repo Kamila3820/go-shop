@@ -2,6 +2,8 @@ module github.com/Kamila3820/go-shop-tutorial
 
 go 1.21.5
 
+require golang.org/x/mod v0.17.0
+
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/gofiber/fiber/v2 v2.52.0 // indirect
