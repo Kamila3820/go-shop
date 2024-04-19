@@ -14,6 +14,7 @@ import (
 
 type IFilesUsecase interface {
 	UploadToStorage(req []*files.FileReq) ([]*files.FileRes, error)
+	DeleteFileOnStorage(req []*files.DeleteFileReq) error
 }
 
 type filesUsecase struct {
@@ -108,4 +109,38 @@ func (u *filesUsecase) UploadToStorage(req []*files.FileReq) ([]*files.FileRes, 
 		res = append(res, result)
 	}
 	return res, nil
+}
+
+func (u *filesUsecase) deleteFromStorageFileWorkers(ctx context.Context, jobs <-chan *files.DeleteFileReq, errs chan<- error) {
+	for job := range jobs {
+		if err := os.Remove("./assets/images/" + job.Destination); err != nil {
+			errs <- fmt.Errorf("remove file: %s failed: %v", job.Destination, err)
+			return
+		}
+		errs <- nil
+	}
+}
+
+func (u *filesUsecase) DeleteFileOnStorage(req []*files.DeleteFileReq) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+
+	jobsCh := make(chan *files.DeleteFileReq, len(req))
+	errsCh := make(chan error, len(req))
+
+	for _, r := range req {
+		jobsCh <- r
+	}
+	close(jobsCh)
+
+	numWorkers := 5
+	for i := 0; i < numWorkers; i++ {
+		go u.deleteFromStorageFileWorkers(ctx, jobsCh, errsCh)
+	}
+
+	for a := 0; a < len(req); a++ {
+		err := <-errsCh
+		return err
+	}
+	return nil
 }
