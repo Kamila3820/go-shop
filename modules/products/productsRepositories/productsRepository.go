@@ -8,11 +8,13 @@ import (
 	"github.com/Kamila3820/go-shop-tutorial/modules/entities"
 	"github.com/Kamila3820/go-shop-tutorial/modules/files/filesUsecases"
 	"github.com/Kamila3820/go-shop-tutorial/modules/products"
+	"github.com/Kamila3820/go-shop-tutorial/modules/products/productsPatterns"
 	"github.com/jmoiron/sqlx"
 )
 
 type IProductsRepository interface {
 	FindOneProduct(productId string) (*products.Product, error)
+	FindProduct(req *products.ProductFilter) ([]*products.Product, int)
 }
 
 type productsRepository struct {
@@ -83,4 +85,14 @@ func (r *productsRepository) FindOneProduct(productId string) (*products.Product
 	}
 
 	return product, nil
+}
+
+func (r *productsRepository) FindProduct(req *products.ProductFilter) ([]*products.Product, int) {
+	builder := productsPatterns.FindProductBuilder(r.db, req)
+	engineer := productsPatterns.FindProductEngineer(builder)
+
+	result := engineer.FindProduct().Result()
+	count := engineer.CountProduct().Count()
+
+	return result, count
 }
