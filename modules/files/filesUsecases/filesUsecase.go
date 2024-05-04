@@ -54,10 +54,10 @@ func (u *filesUsecase) uploadToStorageWorker(ctx context.Context, jobs <-chan *f
 		}
 
 		// Upload an object to storage
-		dest := fmt.Sprintf("./assets/images/%s", job.Destination)
+		dest := fmt.Sprintf("./assets/image/%s", job.Destination)
 		if err := os.WriteFile(dest, b, 0777); err != nil {
-			if err := os.MkdirAll("./assets/images/"+strings.Replace(job.Destination, job.FileName, "", 1), 0777); err != nil {
-				errs <- fmt.Errorf("mkdir \"./assets/images/%s\" failed: %v", err, job.Destination)
+			if err := os.MkdirAll("./assets/image/"+strings.Replace(job.Destination, job.FileName, "", 1), 0777); err != nil {
+				errs <- fmt.Errorf("mkdir \"./assets/image/%s\" failed: %v", err, job.Destination)
 				return
 			}
 			if err := os.WriteFile(dest, b, 0777); err != nil {
@@ -113,7 +113,7 @@ func (u *filesUsecase) UploadToStorage(req []*files.FileReq) ([]*files.FileRes, 
 
 func (u *filesUsecase) deleteFromStorageFileWorkers(ctx context.Context, jobs <-chan *files.DeleteFileReq, errs chan<- error) {
 	for job := range jobs {
-		if err := os.Remove("./assets/images/" + job.Destination); err != nil {
+		if err := os.Remove("./assets/image/" + job.Destination); err != nil {
 			errs <- fmt.Errorf("remove file: %s failed: %v", job.Destination, err)
 			return
 		}
