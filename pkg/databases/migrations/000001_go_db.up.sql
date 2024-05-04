@@ -102,13 +102,13 @@ CREATE TABLE "product_order" (
   "products" jsonb
 );
 
-ALTER TABLE "users" ADD FOREIGN KEY ("role_id") REFERENCES "role" ("id");
-ALTER TABLE "oauth" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
-ALTER TABLE "image" ADD FOREIGN KEY ("product_id") REFERENCES "product" ("id");
-ALTER TABLE "product_category" ADD FOREIGN KEY ("product_id") REFERENCES "product" ("id");
-ALTER TABLE "product_category" ADD FOREIGN KEY ("category_id") REFERENCES "categories" ("id");
-ALTER TABLE "order" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
-ALTER TABLE "product_order" ADD FOREIGN KEY ("order_id") REFERENCES "order" ("id");
+ALTER TABLE "users" ADD FOREIGN KEY ("role_id") REFERENCES "role" ("id") ON DELETE CASCADE;
+ALTER TABLE "oauth" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE;
+ALTER TABLE "image" ADD FOREIGN KEY ("product_id") REFERENCES "product" ("id") ON DELETE CASCADE;
+ALTER TABLE "product_category" ADD FOREIGN KEY ("product_id") REFERENCES "product" ("id") ON DELETE CASCADE;
+ALTER TABLE "product_category" ADD FOREIGN KEY ("category_id") REFERENCES "categories" ("id") ON DELETE CASCADE;
+ALTER TABLE "order" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE;
+ALTER TABLE "product_order" ADD FOREIGN KEY ("order_id") REFERENCES "order" ("id") ON DELETE CASCADE;
 
 CREATE TRIGGER set_updated_at_timestamp_users_table BEFORE UPDATE ON "users" FOR EACH ROW EXECUTE PROCEDURE set_updated_at_column();
 CREATE TRIGGER set_updated_at_timestamp_oauth_table BEFORE UPDATE ON "oauth" FOR EACH ROW EXECUTE PROCEDURE set_updated_at_column();
