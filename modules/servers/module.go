@@ -10,6 +10,9 @@ import (
 	"github.com/Kamila3820/go-shop-tutorial/modules/middlewares/middlewaresRepositories"
 	"github.com/Kamila3820/go-shop-tutorial/modules/middlewares/middlewaresUsecases"
 	"github.com/Kamila3820/go-shop-tutorial/modules/monitor/monitorHandlers"
+	"github.com/Kamila3820/go-shop-tutorial/modules/orders/ordersHandlers"
+	"github.com/Kamila3820/go-shop-tutorial/modules/orders/ordersRepositories"
+	"github.com/Kamila3820/go-shop-tutorial/modules/orders/ordersUsecases"
 	"github.com/Kamila3820/go-shop-tutorial/modules/products/productsHandlers"
 	"github.com/Kamila3820/go-shop-tutorial/modules/products/productsRepositories"
 	"github.com/Kamila3820/go-shop-tutorial/modules/products/productsUsecases"
@@ -25,6 +28,7 @@ type IModuleFactory interface {
 	AppinfoModule()
 	FilesModule()
 	ProductsModule()
+	OrdersModule()
 }
 
 type moduleFactory struct {
@@ -116,4 +120,18 @@ func (m *moduleFactory) ProductsModule() {
 	router.Get("/:product_id", m.mid.ApiKeyAuth(), productsHandler.FindOneProduct)
 
 	router.Delete("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(2), productsHandler.DeleteProduct)
+}
+
+func (m *moduleFactory) OrdersModule() {
+	filesUsecase := filesUsecases.FilesUsecase(m.s.cfg)
+	productsRepository := productsRepositories.ProductsRepository(m.s.db, m.s.cfg, filesUsecase)
+
+	ordersRepository := ordersRepositories.OrdersRepository(m.s.db)
+	ordersUsecase := ordersUsecases.OrdersUsecase(ordersRepository, productsRepository)
+	ordersHandler := ordersHandlers.OrdersHandler(m.s.cfg, ordersUsecase)
+
+	router := m.r.Group("/orders")
+
+	router.Get("/:order_id", m.mid.JwtAuth(), ordersHandler.FindOneOrder)
+
 }
