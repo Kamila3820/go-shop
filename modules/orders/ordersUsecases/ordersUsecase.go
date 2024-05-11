@@ -1,6 +1,9 @@
 package ordersUsecases
 
 import (
+	"math"
+
+	"github.com/Kamila3820/go-shop-tutorial/modules/entities"
 	"github.com/Kamila3820/go-shop-tutorial/modules/orders"
 	"github.com/Kamila3820/go-shop-tutorial/modules/orders/ordersRepositories"
 	"github.com/Kamila3820/go-shop-tutorial/modules/products/productsRepositories"
@@ -8,6 +11,7 @@ import (
 
 type IOrdersUsecase interface {
 	FindOneOrder(orderId string) (*orders.Order, error)
+	FindOrder(req *orders.OrderFilter) *entities.PaginateRes
 }
 
 type ordersUsecase struct {
@@ -29,4 +33,17 @@ func (u *ordersUsecase) FindOneOrder(orderId string) (*orders.Order, error) {
 	}
 
 	return order, nil
+}
+
+func (u *ordersUsecase) FindOrder(req *orders.OrderFilter) *entities.PaginateRes {
+	orders, count := u.orderRepository.FindOrder(req)
+
+	return &entities.PaginateRes{
+		Data:      orders,
+		Page:      req.Page,
+		Limit:     req.Limit,
+		TotalItem: count,
+		TotalPage: int(math.Ceil(float64(count) / float64(req.Limit))),
+	}
+
 }
